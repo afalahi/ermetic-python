@@ -10,8 +10,8 @@ def get_aws_accounts(token: str, csv: bool = False, status: str = "All"):
 
     Parameters
     ----------
-        filter: str
-            Filter Accounts: Valid, Invalid
+        status: str
+            Filter Accounts by status: Valid, Invalid
         CSV: boolean
             Save results as CSV
 
