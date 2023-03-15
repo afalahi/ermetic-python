@@ -6,6 +6,15 @@ from ermetic_request import ermetic_request
 
 
 def get_okta_users(token: str, csv: bool = False):
+    """
+    Get Okta users and save to CSV or JSON
+
+    Keyword Arguments:
+
+    token -- The Ermetic Token
+
+    csv -- Save to file to csv (default false)
+    """
     data = ermetic_request(token=token, query=okta_users_query)
 
     if csv:
