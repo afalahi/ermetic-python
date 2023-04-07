@@ -5,7 +5,7 @@ from okta_users_query import okta_users_query
 from ermetic_request import ermetic_request
 
 
-def get_okta_users(token: str, csv: bool = False):
+def get_okta_users(token: str, csv: bool = True):
     """
     Get Okta users and save to CSV or JSON
 

@@ -5,7 +5,7 @@ from aws_accounts_query import aws_accounts_query
 from ermetic_request import ermetic_request
 
 
-def get_aws_accounts(token: str, csv: bool = False, status: str = "All"):
+def get_aws_accounts(token: str, csv: bool = True, status: str = "All"):
     aws_accounts = ermetic_request(token=token, query=aws_accounts_query)
     # Filter the accounts based on their status
     if status == 'Invalid' or status == "invalid":
