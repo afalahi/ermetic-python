@@ -1,14 +1,18 @@
+#!/usr/bin/env python3
+
 import requests
+from dotenv import dotenv_values
 from typing import List, Dict, Callable
 
 
-def ermetic_request(token: str, query: Callable):
+def ermetic_request(query: Callable):
+    config = dotenv_values()
     # Needed for Pagination, but we can bypass by requesting 1000 items in the "first" query parameter
     CURRENT_CURSOR: str = "null"
     # Build the request and call the API
-    URL = "https://us.app.ermetic.com/api/graph"
+    URL = config['ERMETIC_URL']
     HEADERS = {
-        'Authorization': f'Bearer {token}',
+        'Authorization': f'Bearer {config["ERMETIC_TOKEN"]}',
         'Content-Type': 'application/json'
     }
     res = requests.post(url=URL, headers=HEADERS, json={

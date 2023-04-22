@@ -1,12 +1,13 @@
+#!/usr/bin/env python3
 import csv as csv_ops
 from typing import List, Dict, Literal
 
-from aws_accounts_query import aws_accounts_query
-from ermetic_request import ermetic_request
+from queries.aws_accounts_query import aws_accounts_query
+from common.ermetic_request import ermetic_request
 
 
-def get_aws_accounts(token: str, csv: bool = True, status: str = "All"):
-    aws_accounts = ermetic_request(token=token, query=aws_accounts_query)
+def get_aws_accounts(csv: bool = True, status: str = "All"):
+    aws_accounts = ermetic_request(query=aws_accounts_query)
     # Filter the accounts based on their status
     if status == 'Invalid' or status == "invalid":
         aws_accounts: List[Dict] = list(

@@ -1,11 +1,12 @@
+#!/usr/bin/env python3
 import csv as csv_ops
 import json
 
-from okta_users_query import okta_users_query
-from ermetic_request import ermetic_request
+from queries.okta_users_query import okta_users_query
+from common.ermetic_request import ermetic_request
 
 
-def get_okta_users(token: str, csv: bool = True):
+def get_okta_users(csv: bool = True):
     """
     Get Okta users and save to CSV or JSON
 
@@ -15,7 +16,7 @@ def get_okta_users(token: str, csv: bool = True):
 
     csv -- Save to file to csv (default false)
     """
-    data = ermetic_request(token=token, query=okta_users_query)
+    data = ermetic_request(query=okta_users_query)
 
     if csv:
         file_name = 'okta_users.csv'

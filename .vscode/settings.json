@@ -1,0 +1,4 @@
+{
+  "python.analysis.extraPaths": ["./queries", "./common"],
+  "python.analysis.typeCheckingMode": "off"
+}
