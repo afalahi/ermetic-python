@@ -7,6 +7,7 @@ def aws_accounts_query(current_cursor):
               Name
               Status
               Issues
+              ParentScopeId
               Audit
               CreationTime
           }}
