@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-import csv as csv_ops
 from typing import List, Dict, Literal
 
 from queries.aws_accounts_query import aws_accounts_query
 from common.ermetic_request import ermetic_request
+from common.save_to_csv import save_to_csv
 
 
 def get_aws_accounts(csv: bool = True, status: str = "All"):
@@ -25,11 +25,10 @@ def get_aws_accounts(csv: bool = True, status: str = "All"):
     if csv:
         if isinstance(aws_accounts, list) != True:
             return aws_accounts
-        file_name = f'AwsAccounts-{status}.csv'
-        with open(file=file_name, mode='w', newline='') as csv_file:
-            writer = csv_ops.DictWriter(
-                csv_file, fieldnames=aws_accounts[0].keys())
-            writer.writeheader()
-            writer.writerows(aws_accounts)
+        file_name = f'AwsAccounts-{status}'
+        save_to_csv(file_name=file_name, data=aws_accounts)
 
     return aws_accounts
+
+
+get_aws_accounts()
