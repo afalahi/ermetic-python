@@ -1,7 +1,7 @@
 # We need to double curly brace to escape
-def aws_accounts_query(current_cursor):
+def aws_accounts_query(after: str, first: int = 1000):
     query = f"""query {{
-      AwsAccounts(after:{current_cursor} first:1000) {{
+      AwsAccounts(after:{after}, first:{first}) {{
           nodes {{
               Id
               Name

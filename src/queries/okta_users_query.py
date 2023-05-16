@@ -1,6 +1,6 @@
-def okta_users_query(current_cursor: str):
+def okta_users_query(after: str, filters: str = 'null', first: int = 1000):
     return f""" query {{
-    OktaUsers(after:{current_cursor} first:1000) {{
+    OktaUsers(after:{after} filter:{filters},first:{first}) {{
         nodes {{
             Mail
             Status

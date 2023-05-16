@@ -1,4 +1,4 @@
-def azure_resources_query(after: str, filters: str, first: int = 1000):
+def azure_resources_query(after: str, filters: str = 'null', first: int = 1000):
     return f""" query {{
     AzureResources(filter:{filters}, first:{first}, after:{after}) {{
         nodes {{
