@@ -4,5 +4,8 @@ from queries.get_folders_query import get_folders_query
 
 
 def get_folders():
+    """
+    Gets All folders in Ermetic
+    """
     folders = ermetic_request(query=get_folders_query)
     return folders

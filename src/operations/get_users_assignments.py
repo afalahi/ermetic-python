@@ -23,6 +23,15 @@ from operations.get_users import get_users
 
 
 def get_users_assignments(csv_file=False, json_file=False):
+    """
+    Get Tenant users and save to CSV or JSON
+
+    Keyword Arguments:
+
+    csv_file -- Save to file to csv (default false)
+
+    json_file -- Save to file to json (default false)
+    """
     users = get_users()
     aws_accounts = get_aws_accounts(False)
     folders = get_folders()
@@ -96,3 +105,6 @@ def get_users_assignments(csv_file=False, json_file=False):
             jsonFile.write(json.dumps(users))
             jsonFile.close()
     return access_report
+
+
+get_users_assignments(csv_file=True)
