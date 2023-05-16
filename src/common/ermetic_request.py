@@ -5,7 +5,7 @@ from dotenv import dotenv_values
 from typing import List, Dict, Callable
 
 
-def ermetic_request(query: Callable):
+def ermetic_request(query: Callable, **kwargs):
     config = dotenv_values()
     # Needed for Pagination, but we can bypass by requesting 1000 items in the "first" query parameter
     CURRENT_CURSOR: str = "null"
@@ -17,7 +17,7 @@ def ermetic_request(query: Callable):
     }
     try:
         res = requests.post(url=URL, headers=HEADERS, json={
-            'query': query(CURRENT_CURSOR)})
+            'query': query(CURRENT_CURSOR, **kwargs)})
         res.raise_for_status()
         data: dict = res.json()
         res.close()
@@ -31,7 +31,7 @@ def ermetic_request(query: Callable):
         # loop if we have more than one page
         while (has_next_page):
             res = requests.post(url=URL, headers=HEADERS, json={
-                'query': query(CURRENT_CURSOR)})
+                'query': query(CURRENT_CURSOR, **kwargs)})
             res.raise_for_status()
             data = res.json()
             results += data['data'][resource]['nodes']
@@ -42,7 +42,7 @@ def ermetic_request(query: Callable):
     except requests.exceptions.HTTPError as error:
         raise SystemExit(error)
     except requests.exceptions.RequestException as error:
-        SystemExit(error)
+        raise SystemExit(error)
 
     # Extract the resource name, whatever we're querying
     # resource = ''
