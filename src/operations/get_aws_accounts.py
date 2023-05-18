@@ -29,6 +29,3 @@ def get_aws_accounts(csv: bool = True, status: str = "All"):
         save_to_csv(file_name=file_name, data=aws_accounts)
 
     return aws_accounts
-
-
-get_aws_accounts()
