@@ -18,8 +18,16 @@ from datetime import datetime
 
 def save_to_csv(file_name: str, data: List[Dict]):
     file_name += f'-{datetime.now().strftime("%Y-%m-%d")}.csv'
-    with open(file=file_name, mode='w', newline='') as csv_file:
-        writer = csv.DictWriter(
-            csv_file, fieldnames=data[0].keys())
-        writer.writeheader()
-        writer.writerows(data)
+    try:
+        with open(file=file_name, mode='w', newline='') as csv_file:
+            writer = csv.DictWriter(
+                csv_file, fieldnames=data[0].keys())
+            writer.writeheader()
+            try:
+                writer.writerows(data)
+            except (IOError, OSError) as e:
+                raise SystemExit(
+                    f"Error writing to file {e.filename}: {e.args[1]}")
+    except (FileNotFoundError, PermissionError, OSError) as e:
+        raise SystemExit(
+            f"The file '{e.filename}' is in use or we don't have access: {e.args[1]}")
