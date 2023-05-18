@@ -10,7 +10,7 @@
   - [Vscode](https://code.visualstudio.com/docs/python/environments#_creating-environments)
   - [CLI](https://docs.python.org/3/library/venv.html)
 
-## CLI Commands
+## Commands
 
 ### Account Management
 
