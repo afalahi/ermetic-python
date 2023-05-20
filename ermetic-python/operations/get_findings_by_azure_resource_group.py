@@ -13,14 +13,31 @@
 # limitations under the License.
 import json
 
-from common.ermetic_request import ermetic_request
-from common.FindingsFilter import FindingsFilter
-from common.save_to_disk import save_to_csv, save_to_json
-from operations.get_azure_resource_by_groupId import azure_resources_by_groupId
+from common import ermetic_request, FindingsFilter, save_to_csv, save_to_json
+from operations import azure_resources_by_groupId
 from queries.findings_by_resource_group_query import findings_by_resource_group_query
 
 
 def get_findings_by_azure_resource_group(resource_group_id: str, status: str = 'Open', csv_file=False, json_file=False):
+    """
+    Retrieves findings by Azure resource group Id.
+
+    Parameters
+    ----------
+    resource_group_id (str)
+                        The ID of the Azure resource group.
+    status (str, optional): 
+                        The status of the findings. Defaults to 'Open'.
+    csv_file (bool, optional): 
+                        Flag indicating whether to save findings as a CSV file. Defaults to False.
+    json_file (bool, optional): 
+                        Flag indicating whether to save findings as a JSON file. Defaults to False.
+
+    Returns
+    -------
+        List[dict]: 
+                        A list of findings matching the specified criteria.
+    """
     azure_resources = azure_resources_by_groupId(resource_group_id)
     resource_ids = [i['Id'] for i in azure_resources]
     findings_filter = FindingsFilter(
