@@ -13,4 +13,3 @@
 # limitations under the License.
 
 from operations import get_findings_by_azure_resource_group,get_users_assignments,get_aws_accounts, get_okta_users
-get_aws_accounts(csv_file=True)
