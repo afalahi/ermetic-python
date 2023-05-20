@@ -11,10 +11,6 @@
 from queries import aws_accounts_query
 from common import ermetic_request, save_to_csv
 from typing import List, Dict, Literal
-# from queries.aws_accounts_query import aws_accounts_query
-# from common.ermetic_request import ermetic_request
-# from common.save_to_disk import save_to_csv
-
 
 def get_aws_accounts(csv_file: bool = False, status: str = "All"):
     aws_accounts = ermetic_request(query=aws_accounts_query)
@@ -39,6 +35,3 @@ def get_aws_accounts(csv_file: bool = False, status: str = "All"):
         save_to_csv(file_name=file_name, data=aws_accounts)
 
     return aws_accounts
-
-
-get_aws_accounts(csv_file=True)
