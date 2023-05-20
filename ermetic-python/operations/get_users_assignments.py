@@ -36,7 +36,7 @@ def get_users_assignments(csv_file=False, json_file=False):
     aws_accounts = get_aws_accounts(False)
     folders = get_folders()
 
-    def aws_folder_path(folders, aws_folder_id):
+    def get_ermetic_aws_folder_path(folders, aws_folder_id):
         '''
         Builds AWS Account Folder path to help locating accounts
         '''
@@ -46,63 +46,65 @@ def get_users_assignments(csv_file=False, json_file=False):
                 if parent_id is None:
                     return item['Name']
                 else:
-                    parent_path = aws_folder_path(folders, parent_id)
+                    parent_path = get_ermetic_aws_folder_path(folders, parent_id)
                     return f"{parent_path}/{item['Name']}"
         return None
 
     access_report: List[Dict] = []
     for account in aws_accounts:
-        obj = {}
-        userRole = []
-        userName = []
-        access_type = []
-        path = []
-        obj["account"] = account['Name']
-        obj["accountId"] = account['Id']
+        obj = {
+            "AccountName": account["Name"],
+            "AccountId": account["Id"],
+            "Users": []
+        }
         for user in users:
-            if account['Id'] == user['ScopeId']:
-                userName.append(user["UserId"])
-                userRole.append(user['Role'])
-                access_type.append('Direct')
-                path.append(aws_folder_path(folders, account['ParentScopeId']))
-            if user['ScopeId'] is None:
-                userName.append(user["UserId"])
-                userRole.append(user['Role'])
-                access_type.append('Organization')
-                path.append(aws_folder_path(folders, account['ParentScopeId']))
+            user_role = {
+                "UserId": None,
+                "Role": None,
+                "AccessType": None,
+                "FolderPath": None
+            }
+            if account["Id"] == user["ScopeId"]:
+                user_role["UserId"] = user["UserId"]
+                user_role["Role"] = user["Role"]
+                user_role["AccessType"] = "Direct"
+                user_role["FolderPath"] = get_ermetic_aws_folder_path(folders, account["ParentScopeId"])
+                obj["Users"].append(user_role)
+            if not user["ScopeId"]:
+                user_role["UserId"] = user["UserId"]
+                user_role["Role"] = user["Role"]
+                user_role["AccessType"] = "Organization"
+                user_role["FolderPath"] = get_ermetic_aws_folder_path(folders, account["ParentScopeId"])
+                obj["Users"].append(user_role)
             for folder in folders:
-                if folder['Id'] == user['ScopeId'] and folder['Id'] == account['ParentScopeId']:
-                    userName.append(user["UserId"])
-                    userRole.append(user['Role'])
-                    access_type.append(folder["Name"])
-                    path.append(aws_folder_path(
-                        folders, account['ParentScopeId']))
+                if folder["Id"] == user["ScopeId"]:
+                    user_role["UserId"] = user["UserId"]
+                    user_role["Role"] = user["Role"]
+                    user_role["AccessType"] = "Folder"
+                    user_role["FolderPath"] = get_ermetic_aws_folder_path(folders, account["ParentScopeId"])
+                    obj["Users"].append(user_role)
+        access_report.append(obj)
 
-        obj['Users'] = userName
-        obj['Role'] = userRole
-        obj['AccessType'] = access_type
-        obj['AccountPath'] = path
-        access_report.append(deepcopy(obj))
     if csv_file:
         try:
             with open('users.csv', 'w', newline='') as csv_file:
                 writer = csv.writer(csv_file)
                 try:
-                    writer.writerow(access_report[0].keys())
+                    header = list(access_report[0].keys())
+                    header.append(access_report[0]['Users'][0].keys())
+                    print(header)
+                    writer.writerow(header)
                 except (IOError, OSError):
                     raise SystemExit(
                         f"Error writing to file {e.filename}: {e.args[1]}")
                 for entry in access_report:
-                    account = entry['account']
-                    accountId = entry['accountId']
+                    account = entry['AccountName']
+                    accountId = entry['AccountId']
                     users = entry['Users']
-                    role = entry['Role']
-                    accessType = entry['AccessType']
-                    accountPath = entry['AccountPath']
                     try:
                         for i in range(len(users)):
                             writer.writerow(
-                                [account, accountId, users[i], role[i], accessType[i], accountPath[i]])
+                                [account, accountId, users[i]['UserId'], users[i]['Role'], users[i]['AccessType'], users[i]['FolderPath']])
                     except (IOError, OSError) as e:
                         raise SystemExit(
                             f"Error writing to file {e.filename}: {e.args[1]}")
@@ -111,6 +113,6 @@ def get_users_assignments(csv_file=False, json_file=False):
                 f"The file '{e.filename}' is in use or we don't have access: {e.args[1]}")
     if json_file:
         with open(file='users.json', mode='w', newline='') as jsonFile:
-            jsonFile.write(json.dumps(users))
+            jsonFile.write(json.dumps(access_report))
             jsonFile.close()
     return access_report
