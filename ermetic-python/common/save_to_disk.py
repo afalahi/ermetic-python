@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import csv
+import json
 from typing import List, Dict
 from datetime import datetime
 
@@ -25,6 +26,22 @@ def save_to_csv(file_name: str, data: List[Dict]):
             writer.writeheader()
             try:
                 writer.writerows(data)
+            except (IOError, OSError) as e:
+                raise SystemExit(
+                    f"Error writing to file {e.filename}: {e.args[1]}")
+    except (FileNotFoundError, PermissionError, OSError) as e:
+        raise SystemExit(
+            f"The file '{e.filename}' is in use or we don't have access: {e.args[1]}")
+
+
+def save_to_json(file_name: str, data: List[Dict]):
+    file_name += f'-{datetime.now().strftime("%Y-%m-%d")}.csv'
+    try:
+        with open(file=file_name, mode='w', newline='') as json_file:
+            json_data = {"data": data}
+            try:
+                json_file.write(json.dumps(json_data))
+                json_file.close()
             except (IOError, OSError) as e:
                 raise SystemExit(
                     f"Error writing to file {e.filename}: {e.args[1]}")

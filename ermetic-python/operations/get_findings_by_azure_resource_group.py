@@ -15,12 +15,12 @@ import json
 
 from common.ermetic_request import ermetic_request
 from common.FindingsFilter import FindingsFilter
-from common.save_to_csv import save_to_csv
+from common.save_to_disk import save_to_csv, save_to_json
 from operations.get_azure_resource_by_groupId import azure_resources_by_groupId
 from queries.findings_by_resource_group_query import findings_by_resource_group_query
 
 
-def findings_by_resource_group(resource_group_id: str, status: str = 'Open'):
+def get_findings_by_azure_resource_group(resource_group_id: str, status: str = 'Open', csv_file=False, json_file=False):
     azure_resources = azure_resources_by_groupId(resource_group_id)
     resource_ids = [i['Id'] for i in azure_resources]
     findings_filter = FindingsFilter(
@@ -31,7 +31,10 @@ def findings_by_resource_group(resource_group_id: str, status: str = 'Open'):
         steps = finding['Remediation']['Console']['Steps'] = str(
             finding['Remediation']['Console']['Steps']).split('\n')
         finding['Remediation'] = '\n'.join(steps)
-
-    file_name = f'findings-{resource_group_id.split("/")[-1]}'
-    save_to_csv(file_name=file_name, data=findings)
+    if csv_file:
+        file_name = f'findings-{resource_group_id.split("/")[-1]}'
+        save_to_csv(file_name=file_name, data=findings)
+    if json_file:
+        file_name = f'findings-{resource_group_id.split("/")[-1]}'
+        save_to_json(file_name=file_name, data=findings)
     return findings
