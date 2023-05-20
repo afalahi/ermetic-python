@@ -13,5 +13,6 @@
 # limitations under the License.
 
 from common.AzureResourceFilter import AzureResourceFilter
+from common.FindingsFilter import FindingsFilter
 from common.ermetic_request import ermetic_request
 from common.save_to_disk import save_to_csv, save_to_json
