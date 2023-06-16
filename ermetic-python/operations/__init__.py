@@ -18,3 +18,4 @@ from operations.get_azure_resource_by_groupId import azure_resources_by_groupId
 from operations.get_findings_by_azure_resource_group import get_findings_by_azure_resource_group
 from operations.get_users_assignments import get_users_assignments
 from operations.get_okta_users import get_okta_users
+from operations.get_aad_aws_role_activity import get_aad_aws_role_activity

@@ -18,3 +18,4 @@ from queries.users_assignments_query import users_assignments_query
 from queries.get_folders_query import get_folders_query
 from queries.okta_users_query import okta_users_query
 from queries.findings_by_resource_group_query import findings_by_resource_group_query
+from queries.azure_ad_aws_last_activity_query import azure_ad_aws_last_activity_query
