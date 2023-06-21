@@ -15,7 +15,6 @@
 from typing import List, Dict
 import json
 import csv
-from copy import deepcopy
 
 from operations.get_aws_accounts import get_aws_accounts
 from operations.get_folders import get_folders
@@ -87,8 +86,8 @@ def get_users_assignments(csv_file=False, json_file=False):
 
   if csv_file:
     try:
-      with open('users.csv', 'w', newline='') as csv_file:
-        writer = csv.writer(csv_file)
+      with open('users.csv', 'w', newline='') as file:
+        writer = csv.writer(file)
         try:
           header = list(access_report[0].keys())
           header.append(access_report[0]['Users'][0].keys())
@@ -111,7 +110,7 @@ def get_users_assignments(csv_file=False, json_file=False):
       raise SystemExit(
           f"The file '{e.filename}' is in use or we don't have access: {e.args[1]}")
   if json_file:
-    with open(file='users.json', mode='w', newline='') as jsonFile:
-      jsonFile.write(json.dumps(access_report))
-      jsonFile.close()
+    with open(file='users.json', mode='w', newline='') as file:
+      file.write(json.dumps(access_report))
+      file.close()
   return access_report
