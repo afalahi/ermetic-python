@@ -10,13 +10,13 @@
 
 This package contains the following methods:
 
-| Function                               | Parameters                                                                      | Description                                                                    |
-| -------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `get_aws_accounts`                     | `csv_file: bool = False, json_file: bool = False`                               | Retrieves information about AWS accounts from the Ermetic platform.            |
-| `get_users_assignments`                | `csv_file: bool = False, json_file: bool = False`                               | Retrieves users assignment report.                                             |
-| `get_okta_users`                       | `csv_file: bool = False, json_file: bool = False`                               | Retrieves a report on Okta users and AWS roles they assume.                    |
-| `get_findings_by_azure_resource_group` | `resource_group_id: str, status: str = 'Open', csv_file=False, json_file=False` | Retrieves Findings based on Azure Resource Group.                              |
-| `get_aad_aws_role_activity`            | `days: int`                                                                     | Reports on AAD Users with AWS Roles with activity greater than days parameter. |
+| Function                               | Parameters                                                                 | Description                                                                    |
+| -------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `get_aws_accounts`                     | `csv_file: bool`, `json_file: bool`                                        | Retrieves information about AWS accounts from the Ermetic platform.            |
+| `get_users_assignments`                | `csv_file: bool`, `json_file: bool`                                        | Retrieves users assignment report.                                             |
+| `get_okta_users`                       | `csv_file: bool`, `json_file: bool`                                        | Retrieves a report on Okta users and AWS roles they assume.                    |
+| `get_findings_by_azure_resource_group` | `resource_group_id: str`, `status: str`, `csv_file:bool`, `json_file:bool` | Retrieves Findings based on Azure Resource Group.                              |
+| `get_aad_aws_role_activity`            | `days: int`, `csv_file:bool`, `json_file:bool`                             | Reports on AAD Users with AWS Roles with activity greater than days parameter. |
 
 ## get_aws_accounts
 
