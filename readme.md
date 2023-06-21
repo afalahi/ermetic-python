@@ -190,6 +190,22 @@ Required: False
 Default Value: 90
 ```
 
+#### csv_file
+
+```yaml
+Type: boolean
+Required: False
+Default Value: False
+```
+
+#### json_file
+
+```yaml
+Type: boolean
+Required: False
+Default Value: True
+```
+
 ### Description
 
 This function connects to the Ermetic platform and retrieves information about AAD users and their assumed roles last activity. It can be used to report on inactive AAD Users AWS roles or roles not used in the last 90 or more.
@@ -197,9 +213,10 @@ This function connects to the Ermetic platform and retrieves information about A
 ### Output
 
 - CSV with AAD users and their last AWS Role Activity.
+- JSON with AAD users and their last AWS Role Activity.
 
 ### Returns
 
 ```python
-None
+List[Dict]
 ```
