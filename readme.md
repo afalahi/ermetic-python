@@ -17,6 +17,7 @@ This package contains the following methods:
 | `get_okta_users`                       | `csv_file: bool`, `json_file: bool`                                        | Retrieves a report on Okta users and AWS roles they assume.                    |
 | `get_findings_by_azure_resource_group` | `resource_group_id: str`, `status: str`, `csv_file:bool`, `json_file:bool` | Retrieves Findings based on Azure Resource Group.                              |
 | `get_aad_aws_role_activity`            | `days: int`, `csv_file:bool`, `json_file:bool`                             | Reports on AAD Users with AWS Roles with activity greater than days parameter. |
+| `get_aws_billable_resources`           | `None`                                                                     | Report on AWS billable resources.                                              |
 
 ## get_aws_accounts
 
@@ -52,6 +53,28 @@ This function connects to the Ermetic platform and retrieves information about A
 
 ```python
 List[Dict] | Literal | Any
+```
+
+## get_aws_billable_resources
+
+Get AWS billable resources
+
+### Parameters
+
+`None`
+
+### Description
+
+Generates a CSV with AWS billable resources by the Ermetic platform. The output is calculated based on the legacy license
+
+### Output
+
+- CSV of AWS billable resources with folder paths
+
+### Returns
+
+```python
+None
 ```
 
 ## get_users_assignments
