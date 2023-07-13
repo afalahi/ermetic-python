@@ -35,15 +35,6 @@ def get_aws_billable_resources():
     
     aws_accounts = get_aws_accounts()
     folders = get_folders()
-    ec2_instances = ermetic_request(aws_billable_resources,filters='Types: AwsEc2Instance')
-    ecs_services = ermetic_request(aws_billable_resources,filters='Types: AwsEcsService')
-    eks_clusters = ermetic_request(aws_billable_resources,filters='Types: AwsEksCluster')
-    dynamo_db_tables = ermetic_request(aws_billable_resources,filters='Types: AwsDynamoDbTable')
-    elastic_search_domains = ermetic_request(aws_billable_resources,filters='Types: AwsElasticsearchDomain')
-    lambda_functions = ermetic_request(aws_billable_resources,filters='Types: AwsLambdaFunctionConfiguration')
-    rds_clusters = ermetic_request(aws_billable_resources,filters='Types: AwsRdsCluster')
-    redshift_clusters = ermetic_request(aws_billable_resources,filters='Types: AwsRedshiftCluster')
-    s3_buckets = ermetic_request(aws_billable_resources,filters='Types: AwsS3Bucket')
 
     normalized_lambdas = round(len(lambda_functions) / 10)
     billable_resources_report = []
