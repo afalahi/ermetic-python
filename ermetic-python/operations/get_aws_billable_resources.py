@@ -35,11 +35,11 @@ def get_aws_billable_resources():
     
     aws_accounts = get_aws_accounts()
     folders = get_folders()
-
-    normalized_lambdas = round(len(lambda_functions) / 10)
+    count = 0
     billable_resources_report = []
     for account in aws_accounts:
-      print(f"Currently calculating resources on Account {account['Id']}")
+      count+= 1
+      print(f"Currently calculating resources on Account {account['Id']}: {round(count / len(aws_accounts) * 100)}% completion")
       obj = {
         "AccountName":account['Name'],
         "AccountId":account['Id'],
