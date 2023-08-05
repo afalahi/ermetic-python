@@ -20,3 +20,4 @@ from operations.get_users_assignments import get_users_assignments
 from operations.get_okta_users import get_okta_users
 from operations.get_aad_aws_role_activity import get_aad_aws_role_activity
 from operations.get_aws_billable_resources import get_aws_billable_resources
+from operations.get_excessive_permissions_count import get_aws_excessive_permissions_count

@@ -20,3 +20,4 @@ from queries.okta_users_query import okta_users_query
 from queries.findings_by_resource_group_query import findings_by_resource_group_query
 from queries.azure_ad_aws_last_activity_query import azure_ad_aws_last_activity_query
 from queries.aws_billable_resources import aws_billable_resources
+from queries.aws_excessive_permissions import aws_excessive_permissions
