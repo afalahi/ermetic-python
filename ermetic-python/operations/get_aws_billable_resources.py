@@ -11,28 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from common import ermetic_request
-from common import save_to_csv
-from operations import get_aws_accounts
+from common.ermetic_request import ermetic_request
+from common.save_to_disk import save_to_csv
+from common.get_ermetic_folder_path import get_ermetic_folder_path
+from operations.get_aws_accounts import get_aws_accounts
 from operations.get_folders import get_folders
-from queries import aws_billable_resources
+from queries.aws_billable_resources import aws_billable_resources
 
-def get_aws_billable_resources():
-    
-    def get_ermetic_aws_folder_path(folders, aws_folder_id):
-      '''
-      Builds AWS Account Folder path to help locating accounts
-      '''
-      for item in folders:
-        if item['Id'] == aws_folder_id:
-          parent_id = item['ParentScopeId']
-          if parent_id is None:
-            return item['Name']
-          else:
-            parent_path = get_ermetic_aws_folder_path(folders, parent_id)
-            return f"{parent_path}/{item['Name']}"
-      return None
-    
+def get_aws_billable_resources():    
     aws_accounts = get_aws_accounts()
     folders = get_folders()
     count = 0
@@ -43,7 +29,7 @@ def get_aws_billable_resources():
       obj = {
         "AccountName":account['Name'],
         "AccountId":account['Id'],
-        "Folder": get_ermetic_aws_folder_path(folders=folders, aws_folder_id=account['ParentScopeId'])
+        "Folder": get_ermetic_folder_path(folders=folders, folder_id=account['ParentScopeId'])
       }
       ec2_instances = ermetic_request(aws_billable_resources,filters=f'Types: AwsEc2Instance, AccountIds: "{account["Id"]}"')
       ecs_services = ermetic_request(aws_billable_resources,filters=f'Types: AwsEcsService, AccountIds: "{account["Id"]}"')
