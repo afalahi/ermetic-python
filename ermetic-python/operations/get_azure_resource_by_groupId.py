@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from common.ermetic_request import ermetic_request
-from common.AzureResourceFilter import AzureResourceFilter
+from Filters.AzureResourceFilter import AzureResourceFilter
 from queries.azure_resources_query import azure_resources_query
 
 

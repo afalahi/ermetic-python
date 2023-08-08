@@ -12,4 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from operations import get_findings_by_azure_resource_group,get_users_assignments,get_aws_accounts, get_okta_users, get_aws_billable_resources
+from operations.get_findings_by_azure_resource_group import get_findings_by_azure_resource_group
+from operations.get_users_assignments import get_users_assignments
+from operations.get_aws_accounts import get_aws_accounts
+from operations.get_okta_users import get_okta_users
+from operations.get_aws_billable_resources import get_aws_billable_resources
+from operations.get_excessive_permissions_count import get_aws_excessive_permissions_count
+from Filters.FindingFilter import FindingFilter
+
+# get_aws_excessive_permissions_count(save_excel=True,days=90, add_charts=True, split_charts=True)
+finding_filter = FindingFilter(types="AwsCloudTrailTrailBucketEventDisabledFinding")
+finding_filter.types = ['AwsEc2SecurityGroupUnusedFinding']
+print(finding_filter.to_filter_string())

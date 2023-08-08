@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
-from queries import aws_accounts_query
-from common import ermetic_request, save_to_csv
 from typing import List, Dict, Literal
+from queries.aws_accounts_query import aws_accounts_query
+from common.save_to_disk import save_to_csv
+from common.ermetic_request import ermetic_request
 
 def get_aws_accounts(csv_file: bool = False, status: str = "All"):
     aws_accounts = ermetic_request(query=aws_accounts_query)
