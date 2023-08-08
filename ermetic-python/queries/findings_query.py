@@ -1,8 +1,9 @@
-def aws_excessive_permissions(after:str, filters:str='null', first:int=1000):
+def findings_query(after:str, filters:str='null', first:int=1000):
     return f""" query {{
     Findings(filter:{{{filters}}}, first:{first}, after:{after}) {{
-        totalCount
         nodes{{
+            CreationTime
+            CloudProvider
             Title
             AccountId
             __typename
