@@ -5,76 +5,120 @@ from queries.get_folders_query import get_folders_query
 
 
 class GetFolders:
-    def __init__(self, accounts: List = None) -> None:
-        self.folders = []
-        self.org_tree = []
-        self._accounts = accounts
-        self._root_ids = [{"id": "awsRoot", "name": "AWS"}, {
+    """
+    A Class that gets Ermetic Folders
+    ...
+
+    Properties
+    ----------
+    folders : List[Dict]
+        a flattened list of Ermetic folders
+    folder_tree : List[Dict]
+        a hierarchal representation of Ermetic folders and Accounts if the parameter is provided on class instantiation
+
+    Methods
+    -------
+    get_folders():
+        Gets the folders and sets the attributes
+    """
+
+    def __init__(self, accounts: List[Dict] = None) -> None:
+        """
+        Constructs all the necessary attributes for the class
+
+        Parameters
+        ----------
+            accounts : List[Dict], optional
+                Aws accounts for building the hierarchy (default is None)
+        """
+        self.__folders: List[Dict] = []
+        self.__org_tree: List[Dict] = []
+        self.__accounts = accounts
+        self.__root_ids = [{"id": "awsRoot", "name": "AWS"}, {
             "id": "azureRoot", "name": "Azure"}, {"id": "gcpRoot", "name": "GCP"}]
 
     def get_folders(self):
         """
-        Gets All folders in Ermetic
+        Gets the Ermetic folders and builds the folder tree
         """
-        self.folders = ermetic_request(query=get_folders_query)
-        self._build_org_tree()
+        self.__folders = ermetic_request(query=get_folders_query)
+        self.__build_org_tree()
 
-    def _list_ou_for_parent(self, parent_id: str):
-        response = []
-        for folder in self.folders:
-            if folder['ParentScopeId'] == parent_id:
-                response.append(
-                    {"id": folder["Id"], "name": folder["Name"]})
-        return response
+    @property
+    def folders(self):
+        """Gets Ermetic folders as a list
 
-    def _list_account_for_parent(self, parent_id: str):
-        response = []
-        if self._accounts:
-            for account in self._accounts:
-                if account["ParentScopeId"] == parent_id:
-                    response.append(
-                        {"id": account["Id"], "name": account["Name"]})
-        return response
+        Returns
+        -------
+        List[Dict]
+            Flattened list of folders
+        """
+        return self.__folders
 
-    def _list_entities_for_parent(self, entity_type: str, parent_id: str) -> List[Dict]:
-        """List either accounts or OUs for a given parent."""
-        if entity_type == 'account' and not self._accounts:
+    @property
+    def org_tree(self):
+        """Gets the folders in a hierarchal list
+
+        Returns
+        -------
+        List[Dict]
+            Hierarchal list of folders with accounts if supplied
+        """
+        return self.__org_tree
+
+    def __list_entities_for_parent(self, entity_type: str, parent_id: str) -> List[Dict]:
+        """_summary_
+
+        Parameters
+        ----------
+        entity_type : str
+            entity type can be account or ou
+        parent_id : str
+            the Ermetic ParentScopeId identifier. 
+
+        Returns
+        -------
+        List[Dict]
+            List of Parent OUs or Root accounts (in the root of the system OUs)
+        """
+        if entity_type == 'account' and not self.__accounts:
             return []
 
-        entities = self._accounts if entity_type == 'account' else self.folders
+        entities = self.__accounts if entity_type == 'account' else self.folders
         return [{"id": entity["Id"], "name": entity["Name"]} for entity in entities if entity['ParentScopeId'] == parent_id]
 
-    def _build_tree(self, children: List):
-        # for child in children:
-        #     if self._accounts:
-        #         list_accounts = self._list_account_for_parent(
-        #             parent_id=child["id"])
-        #         if self._accounts and len(self._accounts) != 0:
-        #             child["accounts"] = list_accounts
-        #     child_ous = self._list_ou_for_parent(child["id"])
-        #     if child_ous and len(child_ous) != 0:
-        #         child["children"] = child_ous
-        #         self._build_tree(child_ous)
-        # return children
+    def __build_tree(self, children: List):
+        """Recursively builds the OU/folder hierarchy including cloud accounts if supplied
+
+        Parameters
+        ----------
+        children : List
+            List[Dict] of Ermetic OUs/Folders
+
+        Returns
+        -------
+        List[Dict]
+            returns a hierarchal list of ermetic OUs and any sub OUs
+        """
         for child in children:
-            child_accounts = self._list_entities_for_parent(
+            child_accounts = self.__list_entities_for_parent(
                 'account', child["id"])
-            child_ous = self._list_entities_for_parent('ou', child["id"])
+            child_ous = self.__list_entities_for_parent('ou', child["id"])
 
             if child_accounts:
                 child["accounts"] = child_accounts
             if child_ous:
-                child["children"] = self._build_tree(child_ous)
+                child["children"] = self.__build_tree(child_ous)
         return children
 
-    def _build_org_tree(self):
-        for root in self._root_ids:
-            # root_ous = self._list_ou_for_parent(root["id"])
-            # root_accounts = self._list_account_for_parent(root["id"])
-            root_ous = self._list_entities_for_parent('ou', root["id"])
-            root_accounts = self._list_entities_for_parent(
+    def __build_org_tree(self):
+        """This method builds the entire OU tree and sets the __org_tree private property
+        """
+        for root in self.__root_ids:
+            root_ous = self.__list_entities_for_parent('ou', root["id"])
+            root_accounts = self.__list_entities_for_parent(
                 'account', root["id"])
-            children = self._build_tree(root_ous)
+            children = self.__build_tree(root_ous)
 
-            self.org_tree.append(
+            self.__org_tree.append(
                 {"name": root["name"], "children": children, "accounts": root_accounts})
