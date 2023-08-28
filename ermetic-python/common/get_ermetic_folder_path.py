@@ -11,3 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+def get_ermetic_folder_path(folders, folder_id):
+  '''
+  Builds Account Folder path to help locating accounts
+  '''
+  for item in folders:
+    if item['Id'] == folder_id:
+      parent_id = item['ParentScopeId']
+      if parent_id is None:
+        return item['Name']
+      else:
+        parent_path = get_ermetic_folder_path(folders, parent_id)
+        return f"{parent_path}/{item['Name']}"
+  return None

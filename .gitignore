@@ -161,4 +161,6 @@ cython_debug/
 
 # Dev and testing files
 *.csv
-query_builder.py
+*.xls
+*.xlsx
+tools/

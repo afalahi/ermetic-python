@@ -14,9 +14,9 @@
 
 import csv
 import json
-from queries import azure_ad_aws_last_activity_query
-from common import ermetic_request
 from datetime import datetime
+from queries.azure_ad_aws_last_activity_query import azure_ad_aws_last_activity_query
+from common.ermetic_request import ermetic_request
 
 def get_aad_aws_role_activity(days:int=90, csv_file:bool=False, json_file:bool=True):
   """

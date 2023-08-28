@@ -13,8 +13,10 @@
 # limitations under the License.
 import json
 
-from common import ermetic_request, FindingsFilter, save_to_csv, save_to_json
-from operations import azure_resources_by_groupId
+from common.ermetic_request import ermetic_request
+from Filters.FindingsFilter import FindingsFilter
+from common.save_to_disk import save_to_csv, save_to_json
+from operations.get_azure_resource_by_groupId import azure_resources_by_groupId
 from queries.findings_by_resource_group_query import findings_by_resource_group_query
 
 

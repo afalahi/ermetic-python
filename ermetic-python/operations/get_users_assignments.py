@@ -19,6 +19,7 @@ import csv
 from operations.get_aws_accounts import get_aws_accounts
 from operations.get_folders import get_folders
 from operations.get_users import get_users
+from common.get_ermetic_folder_path import get_ermetic_folder_path
 
 
 def get_users_assignments(csv_file=False, json_file=False):
@@ -34,20 +35,6 @@ def get_users_assignments(csv_file=False, json_file=False):
   users = get_users()
   aws_accounts = get_aws_accounts(False)
   folders = get_folders()
-
-  def get_ermetic_aws_folder_path(folders, aws_folder_id):
-    '''
-    Builds AWS Account Folder path to help locating accounts
-    '''
-    for item in folders:
-      if item['Id'] == aws_folder_id:
-        parent_id = item['ParentScopeId']
-        if parent_id is None:
-          return item['Name']
-        else:
-          parent_path = get_ermetic_aws_folder_path(folders, parent_id)
-          return f"{parent_path}/{item['Name']}"
-    return None
 
   access_report: List[Dict] = []
   for account in aws_accounts:
@@ -67,22 +54,22 @@ def get_users_assignments(csv_file=False, json_file=False):
         user_role["UserId"] = user["UserId"]
         user_role["Role"] = user["Role"]
         user_role["AccessType"] = "Direct"
-        user_role["FolderPath"] = get_ermetic_aws_folder_path(folders, account["ParentScopeId"])
+        user_role["FolderPath"] = get_ermetic_folder_path(folders, account["ParentScopeId"])
         obj["Users"].append(user_role)
       if not user["ScopeId"]:
         user_role["UserId"] = user["UserId"]
         user_role["Role"] = user["Role"]
         user_role["AccessType"] = "Organization"
-        user_role["FolderPath"] = get_ermetic_aws_folder_path(folders, account["ParentScopeId"])
+        user_role["FolderPath"] = get_ermetic_folder_path(folders, account["ParentScopeId"])
         obj["Users"].append(user_role)
       for folder in folders:
         if folder["Id"] == user["ScopeId"]:
           user_role["UserId"] = user["UserId"]
           user_role["Role"] = user["Role"]
           user_role["AccessType"] = "Folder"
-          user_role["FolderPath"] = get_ermetic_aws_folder_path(folders, account["ParentScopeId"])
+          user_role["FolderPath"] = get_ermetic_folder_path(folders, account["ParentScopeId"])
           obj["Users"].append(user_role)
-  access_report.append(obj)
+    access_report.append(obj)
 
   if csv_file:
     try:

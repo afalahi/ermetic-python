@@ -19,9 +19,9 @@ class FindingsFilter:
     def __init__(self, **kwargs) -> None:
         string = ''
         for key in kwargs:
-            if key not in ['Statuses', 'Types', 'ResourceIds', 'Ids', 'Severities']:
+            if key not in ['Statuses', 'Types', 'ResourceIds', 'Ids', 'Severities', 'CreationTimeStart', 'CreationTimeEnd']:
                 raise KeyError(
-                    f'AzureResourceFilter() kwarg{[key]}: Invalid key, accepted values are AccountIds, Types, ResourceGroupIds, Ids')
+                    f'FindingFilter kwarg{[key]}: Invalid key, accepted values are Statuses, ResourceIds, Severities, Ids')
             if key == 'ResourceIds':
                 string += f'{key}:{kwargs[key]}, '
             else:
