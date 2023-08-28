@@ -4,7 +4,7 @@ from common.ermetic_request import ermetic_request
 from queries.get_folders_query import get_folders_query
 
 
-class GetFolders:
+class Folders:
     """
     A Class that gets Ermetic Folders
     ...
@@ -34,8 +34,8 @@ class GetFolders:
         self.__folders: List[Dict] = []
         self.__org_tree: List[Dict] = []
         self.__accounts = accounts
-        self.__root_ids = [{"id": "awsRoot", "name": "AWS"}, {
-            "id": "azureRoot", "name": "Azure"}, {"id": "gcpRoot", "name": "GCP"}]
+        self.__root_ids = [{"Id": "awsRoot", "Name": "AWS"}, {
+            "Id": "azureRoot", "Name": "Azure"}, {"Id": "gcpRoot", "Name": "GCP"}]
 
     def get_folders(self):
         """
@@ -85,7 +85,7 @@ class GetFolders:
             return []
 
         entities = self.__accounts if entity_type == 'account' else self.folders
-        return [{"id": entity["Id"], "name": entity["Name"]} for entity in entities if entity['ParentScopeId'] == parent_id]
+        return [{"Id": entity["Id"], "Name": entity["Name"]} for entity in entities if entity['ParentScopeId'] == parent_id]
 
     def __build_tree(self, children: List):
         """Recursively builds the OU/folder hierarchy including cloud accounts if supplied
@@ -102,23 +102,23 @@ class GetFolders:
         """
         for child in children:
             child_accounts = self.__list_entities_for_parent(
-                'account', child["id"])
-            child_ous = self.__list_entities_for_parent('ou', child["id"])
+                'account', child["Id"])
+            child_ous = self.__list_entities_for_parent('ou', child["Id"])
 
             if child_accounts:
-                child["accounts"] = child_accounts
+                child["Accounts"] = child_accounts
             if child_ous:
-                child["children"] = self.__build_tree(child_ous)
+                child["Children"] = self.__build_tree(child_ous)
         return children
 
     def __build_org_tree(self):
         """This method builds the entire OU tree and sets the __org_tree private property
         """
         for root in self.__root_ids:
-            root_ous = self.__list_entities_for_parent('ou', root["id"])
+            root_ous = self.__list_entities_for_parent('ou', root["Id"])
             root_accounts = self.__list_entities_for_parent(
-                'account', root["id"])
+                'account', root["Id"])
             children = self.__build_tree(root_ous)
 
             self.__org_tree.append(
-                {"name": root["name"], "children": children, "accounts": root_accounts})
+                {"Id": root["Id"], "Name": root["Name"], "Children": children, "Accounts": root_accounts})

@@ -1,145 +1,142 @@
 # Copyright 2023 ali.falahi@ermetic.com
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pandas as pd
-from datetime import datetime, timedelta
+import logging
+from datetime import datetime
+from collections import defaultdict
+
+from Filters.FindingFilter import FindingFilter
+from enums.FindingTypes import FindingTypes
 from operations.get_aws_accounts import get_aws_accounts
-from operations.get_folders import get_folders
+from operations.Folders import Folders
 from common.ermetic_request import ermetic_request
-from common.save_to_disk import save_to_csv
 from common.get_ermetic_folder_path import get_ermetic_folder_path
 from queries.findings_query import findings_query
 
-def get_aws_excessive_permissions_count(save_csv:bool=False, save_excel:bool=False, split_charts:bool=False, days:int=30, add_charts:bool=False, chart_trend:bool=False, compare:bool=False):
-    if not save_excel and not save_csv:
-        print('Cannot save report, you must provide one of these arguments: save_csv=True or save_excel=True')
-        return
-    print('getting aws accounts')
-    aws_accounts = get_aws_accounts(status='valid')
-    folders = get_folders()
-    print("getting permissions count")
-    now = datetime.now()
-    month_ago = now - timedelta(days=days)
-    month_ago.strftime('%Y-%m-%dT%H:%M:%S')
-    def filters(): 
-        return f'''Types:[
-        AwsInactiveUserFinding, 
-        AwsInactiveRoleFinding,
-        AwsExcessivePermissionGroupFinding, 
-        AwsExcessivePermissionRoleFinding, 
-        AwsExcessivePermissionUserFinding,
-        AwsExcessivePermissionPermissionSetFinding,
-        AwsUnusedPermissionSetFinding],
-        CreationTimeStart:"{month_ago.strftime('%Y-%m-%dT%H:%M:%S')}"
-        CreationTimeEnd:"{now.strftime('%Y-%m-%dT%H:%M:%S')}"
-        '''
-    excessive_permissions = ermetic_request(findings_query,filters=filters())
-    permission_report = []
+logging.basicConfig(level=logging.INFO)
+
+
+def get_aws_excessive_permissions_count(days: int = None, group_by_ou: bool = False, compare: bool = False, depth: int = 0):
+    if depth > 2:
+        logging.info('Depth can not be larger than 2')
+    logging.info('getting aws accounts')
+    aws_accounts = get_aws_accounts(status="Valid")
+    folders = Folders()
+    folders.get_folders()
+    logging.info("getting permissions count")
+
+    # build the findings filter for excessive permissions
+    finding_types = [FindingTypes.AwsInactiveRoleFinding,
+                     FindingTypes.AwsExcessivePermissionGroupFinding,
+                     FindingTypes.AwsExcessivePermissionRoleFinding,
+                     FindingTypes.AwsExcessivePermissionUserFinding,
+                     FindingTypes.AwsInactiveUserFinding,
+                     FindingTypes.AwsUnusedPermissionSetFinding,
+                     FindingTypes.AwsExcessivePermissionPermissionSetFinding]
+    finding_filter = FindingFilter(types=finding_types, days=days)
+    # Get the excessive permissions from GraphQL
+    excessive_permissions = ermetic_request(
+        findings_query, filters=finding_filter.to_filter_string())
+    # Pre-filter permissions on accountId
+    permissions_by_account = defaultdict(list)
+    for permission in excessive_permissions:
+        permissions_by_account[permission['AccountId']].append(permission)
+
+    results = []
+    # To get progress percentage
     count = 0
-    for account in aws_accounts:
-        obj = {
-            "Account":f'{get_ermetic_folder_path(folders=folders, folder_id=account["ParentScopeId"])}/{account["Name"]}',
-            "InactiveUsers":0,
-            "InactiveRoles":0,
-            "InactivePermissionSet":0,
-            "OverPrivilegedGroups":0,
-            "OverPrivilegedRoles":0,
-            "OverPrivilegedUsers":0,
-            "OverPrivilegedPermissionSet":0,
-            "Date": datetime.now().strftime('%Y-%m-%d')
-        }
-        for permission in excessive_permissions:
-            if account['Id'] == permission['AccountId']:
-                count+= 1
-                print(f"Currently calculating Excessive Permissions on Account {account['Id']}: {round(count / len(excessive_permissions) * 100)}% completion")
-                if permission["__typename"] == "AwsInactiveUserFinding":
-                    obj["InactiveUsers"]+= 1
-                if permission["__typename"] == "AwsInactiveRoleFinding":
-                    obj["InactiveRoles"]+= 1
-                if permission["__typename"] == "AwsUnusedPermissionSetFinding":
-                    obj["InactivePermissionSet"]+= 1
-                if permission["__typename"] == "AwsExcessivePermissionGroupFinding":
-                    obj["OverPrivilegedGroups"]+= 1
-                if permission["__typename"] == "AwsExcessivePermissionRoleFinding":
-                    obj["OverPrivilegedRoles"]+= 1
-                if permission["__typename"] == "AwsExcessivePermissionUserFinding":
-                    obj["OverPrivilegedUsers"]+= 1
-                if permission["__typename"] == "AwsExcessivePermissionPermissionSetFinding":
-                    obj["OverPrivilegedPermissionSet"]+= 1
-        permission_report.append(obj)
-    # save_to_csv(data=permission_report, file_name="excessive_permissions")
-    if save_csv:
-        save_to_csv(data=permission_report, file_name="excessive_permissions")
-    if save_excel:
-        # Create the workbook and sheet using Pandas DF
-        df = pd.DataFrame(permission_report)
-        workbook_name = f"excessive_permissions_{now.strftime('%Y-%m-%d')}.xlsx"
-        sheet_name = 'excessive_permissions_overview'
-        writer = pd.ExcelWriter(workbook_name, engine='xlsxwriter')
-        df.to_excel(writer, sheet_name=sheet_name, index=False)
-        workbook = writer.book
-        worksheet = writer.sheets[sheet_name]
-        #Freeze the headers
-        worksheet.freeze_panes(1, 0)
-        # Set Column width to max with of header
-        for col_num, value in enumerate(df.columns):
-            max_length = max(df[value].astype(str).apply(len).max(), len(str(value)))
-            worksheet.set_column(col_num, col_num, max_length + 1)
-        if add_charts:
-            # add the chart
-            chart = workbook.add_chart({'type': 'line'})
-            chart.set_size({'width': 800, 'height': 350}) 
-            chart_position = chr(65 + len(df.columns)) + '2'
-            chart_width = 13
-            charts_per_row = 2
-            last_data_column = len(df.columns)
-            for col_num in range(1, len(df.columns) - 1):
-                # Create a new chart object for each series
-                if split_charts:
-                    chart = workbook.add_chart({'type': 'line'})
-                    chart.set_size({'width': 800, 'height': 350}) 
-                    # Add a series to the chart
-                    chart.add_series({
-                        'values': f'={sheet_name}!${chr(65 + col_num)}$2:${chr(65 + col_num)}${len(df) + 1}',
-                        'categories': f'={sheet_name}!$A$2:$A${len(df) + 1}',
-                        'name': f'{sheet_name}!${chr(65 + col_num)}$1',
-                    })
-                    if chart_trend:
-                        chart.add_series({
-                            'trendline': {'type': 'polynomial', 'order': 3},
-                        })
-                    # Calculate the chart row and column position
-                    chart_row = 2
-                    chart_col = last_data_column + (col_num - 1) % charts_per_row * chart_width
-                    chart_col_letter = chr(65 + chart_col)
-                    chart_position = f'{chart_col_letter}{chart_row + (col_num - 1) // charts_per_row * 20}'
-                    worksheet.insert_chart(chart_position, chart)
-                else:
-                    chart.add_series({
-                        'values': f'={sheet_name}!${chr(65 + col_num)}$2:${chr(65 + col_num)}${len(df) + 1}',
-                        'categories': f'={sheet_name}!$A$2:$A${len(df) + 1}',
-                        'name': f'{sheet_name}!${chr(65 + col_num)}$1',
-                    })
-                    if chart_trend:
-                        chart.add_series({
-                            'trendline': {'type': 'polynomial', 'order': 3},
-                        })
-            if not split_charts:
-                # Configure the chart title and x and y axes
-                chart.set_title({'name': 'Excessive Permissions'})
-                chart.set_x_axis({'name': 'Accounts'})
-                chart.set_y_axis({'name': 'Categories'})
-                # Insert single sheet
-                worksheet.insert_chart(chart_position, chart)
-        writer.close()
+    # Set up mapping between the FindingType and a Common name for the report
+    mapping = {
+        "AwsInactiveUserFinding": "InactiveUsers",
+        "AwsInactiveRoleFinding": "InactiveRoles",
+        "AwsUnusedPermissionSetFinding": "InactivePermissionSet",
+        "AwsExcessivePermissionGroupFinding": "OverPrivilegedGroups",
+        "AwsExcessivePermissionRoleFinding": "OverPrivilegedRoles",
+        "AwsExcessivePermissionUserFinding": "OverPrivilegedUsers",
+        "AwsExcessivePermissionPermissionSetFinding": "OverPrivilegedPermissionSet"
+    }
+
+    # Function to update the Permissions object to reduce DRY
+    def update_obj(obj, typename):
+        nonlocal count
+        count += 1
+        logging.info(
+            f"Currently calculating Excessive Permissions: {round(count / len(excessive_permissions) * 100)}% completion")
+        # get the value mapping of the ermetic finding type
+        key = mapping.get(typename)
+        # if the key isn't none then increment the Excessive Permission
+        if key:
+            obj[key] += 1
+
+    # This control flow will return a list of accounts with their Excessive Permission Counts, it's controlled by the parameter group_by_ou=False
+    if not group_by_ou:
+        for account in aws_accounts:
+            obj = {
+                "Account": f'{get_ermetic_folder_path(folders=folders.folders, folder_id=account["ParentScopeId"])}/{account["Name"]}',
+                "InactiveUsers": 0,
+                "InactiveRoles": 0,
+                "InactivePermissionSet": 0,
+                "OverPrivilegedGroups": 0,
+                "OverPrivilegedRoles": 0,
+                "OverPrivilegedUsers": 0,
+                "OverPrivilegedPermissionSet": 0,
+                "Date": datetime.now().strftime('%Y-%m-%d')
+            }
+            for permission in permissions_by_account.get(account['Id'], []):
+                if account['Id'] == permission['AccountId']:
+                    update_obj(obj=obj, typename=permission['__typename'])
+            results.append(obj)
+    # This flow aggregates the Excessive Permissions under their respective account OU/Folder in Ermetic
+    else:
+        folder_hierarchy = Folders(accounts=aws_accounts)
+        folder_hierarchy.get_folders()
+        parent_folders = folder_hierarchy.org_tree
+
+        # Reduce DRY
+        def update_result(parent, child, aws_accounts, permissions, results):
+            folder_name = parent["Name"] if child is None else f"{parent['Name']}/{child['Name']}"
+            obj = {
+                "Folder": folder_name,
+                "InactiveUsers": 0,
+                "InactiveRoles": 0,
+                "InactivePermissionSet": 0,
+                "OverPrivilegedGroups": 0,
+                "OverPrivilegedRoles": 0,
+                "OverPrivilegedUsers": 0,
+                "OverPrivilegedPermissionSet": 0,
+                "Date": datetime.now().strftime('%Y-%m-%d')
+            }
+            for account in aws_accounts:
+                folder_path = get_ermetic_folder_path(
+                    folders=folders.folders, folder_id=account["ParentScopeId"])
+                if folder_name in folder_path:
+                    for permission in permissions.get(account['Id'], []):
+                        update_obj(
+                            obj=obj, typename=permission['__typename'])
+            results.append(obj)
+        # Loop through the root, parent and child folders only two levels deep. The first loop will always run, the rest are controlled by the depth parameter
+        for parent in parent_folders:
+            update_result(parent, None, aws_accounts,
+                          permissions_by_account, results)
+            if parent.get('Children') and depth == 1:
+                for child in parent.get('Children'):
+                    update_result(parent, child, aws_accounts,
+                                  permissions_by_account, results)
+                    if child.get('Children') and depth == 2:
+                        print(f'Depth 2: {child}')
+                        for subchild in child.get('Children'):
+                            update_result(child, subchild, aws_accounts,
+                                          permissions_by_account, results)
+
+    return results

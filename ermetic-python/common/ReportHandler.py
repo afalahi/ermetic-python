@@ -71,7 +71,7 @@ class ReportHandler:
             worksheet.set_column(col_num, col_num, max_length + 1)
         if charts:
             # add the chart
-            chart = workbook.add_chart({'type': 'line'})
+            chart = workbook.add_chart({'type': 'column'})
             chart.set_size({'width': 800, 'height': 350})
             chart_position = chr(65 + len(df.columns)) + '2'
             chart_width = 13
@@ -80,7 +80,7 @@ class ReportHandler:
             for col_num in range(1, len(df.columns) - 1):
                 # Create a new chart object for each series
                 if split_charts:
-                    chart = workbook.add_chart({'type': 'line'})
+                    chart = workbook.add_chart({'type': 'column'})
                     chart.set_size({'width': 800, 'height': 350})
                     # Add a series to the chart
                     chart.add_series({
@@ -117,36 +117,3 @@ class ReportHandler:
                 # Insert single sheet
                 worksheet.insert_chart(chart_position, chart)
         writer.close()
-
-
-def save_to_csv(file_name: str, data: List[Dict]):
-    file_name += f'-{datetime.now().strftime("%Y-%m-%d")}.csv'
-    try:
-        with open(file=file_name, mode='w', newline='') as csv_file:
-            writer = csv.DictWriter(
-                csv_file, fieldnames=data[0].keys())
-            writer.writeheader()
-            try:
-                writer.writerows(data)
-            except (IOError, OSError) as e:
-                raise SystemExit(
-                    f"Error writing to file {e.filename}: {e.args[1]}")
-    except (FileNotFoundError, PermissionError, OSError) as e:
-        raise SystemExit(
-            f"The file '{e.filename}' is in use or we don't have access: {e.args[1]}")
-
-
-def save_to_json(file_name: str, data: List[Dict]):
-    file_name += f'-{datetime.now().strftime("%Y-%m-%d")}.json'
-    try:
-        with open(file=file_name, mode='w', newline='') as json_file:
-            json_data = {"data": data}
-            try:
-                json_file.write(json.dumps(json_data))
-                json_file.close()
-            except (IOError, OSError) as e:
-                raise SystemExit(
-                    f"Error writing to file {e.filename}: {e.args[1]}")
-    except (FileNotFoundError, PermissionError, OSError) as e:
-        raise SystemExit(
-            f"The file '{e.filename}' is in use or we don't have access: {e.args[1]}")

@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import re
+import logging
 from datetime import datetime, timedelta
 from typing import List
 
@@ -19,6 +21,7 @@ from enums.FindingTypes import FindingTypes
 from enums.FindingCategory import FindingCategory
 from enums.FindingStatus import FindingStatus
 from enums.CloudProviders import CloudProviders
+logging.basicConfig(level=logging.INFO)
 
 
 class FindingFilter:
@@ -47,6 +50,8 @@ class FindingFilter:
     def __init__(
         self,
         days: int = None,
+        start_date: str = None,
+        end_date: str = None,
         resource_ids: List[str] | str = None,
         findings_ids: List[str] | str = None,
         types: List[FindingTypes] | FindingTypes = None,
@@ -61,6 +66,10 @@ class FindingFilter:
         ----------
         days : int, optional
             Converts to date range for findings. 30 days means get findings from the past month, by default None
+        start_date : str, optional
+            Finding start date filter
+        end_date : str, optional
+            Finding end date filter
         types : List[FindingTypes] | FindingTypes, optional
             Finding types, by default None
         categories : FindingCategory, optional
@@ -77,6 +86,8 @@ class FindingFilter:
             Findings Ids, these are Finding ids. The parameter will accept a list of Ids, or a single Id
         """
         self._days = days
+        self._start_date = self.start_date = start_date
+        self._end_date = self.end_date = end_date
         self.resource_ids = resource_ids
         self.findings_ids = findings_ids
 
@@ -131,15 +142,63 @@ class FindingFilter:
             self._providers = None
 
     @property
-    def days(self):
-        return self._days
+    def start_date(self):
+        return self._start_date
+
+    @start_date.setter
+    def start_date(self, value):
+        if value:
+            if not re.fullmatch(r'\d{2}-\d{2}-\d{4}', value):
+                value = value.replace("/", "-")
+            try:
+                date_time = datetime.strptime(value, '%m-%d-%Y')
+                if self.end_date:
+                    if date_time.strftime('%Y-%m-%dT%H:%M:%S') > self.end_date:
+                        raise ValueError(
+                            "start date cannot be greater than end date")
+                self._start_date = date_time.strftime('%Y-%m-%dT%H:%M:%S')
+            except ValueError as e:
+                logging.warn(e)
+        else:
+            self._start_date = None
+
+    @property
+    def end_date(self):
+        return self._end_date
+
+    @end_date.setter
+    def end_date(self, value):
+        if value:
+            if not re.fullmatch(r'\d{2}-\d{2}-\d{4}', value):
+                value = value.replace("/", "-")
+            try:
+                date_time = datetime.strptime(value, '%m-%d-%Y')
+                if self.start_date:
+                    if date_time.strftime('%Y-%m-%dT%H:%M:%S') < self.start_date:
+                        raise ValueError(
+                            "start date cannot be greater than end date")
+                self._end_date = date_time.strftime('%Y-%m-%dT%H:%M:%S')
+            except ValueError as e:
+                logging.warn(e)
+        else:
+            self._end_date = None
 
     def __date_range(self):
+        date_string = ''
         if self.days:
             end = datetime.now()
             start = end - timedelta(days=self.days)
-            return f'CreationTimeStart:"{start.strftime("%Y-%m-%dT%H:%M:%S")}",\nCreationTimeEnd:"{end.strftime("%Y-%m-%dT%H:%M:%S")}"\n'
-        return ""
+            date_string = f'CreationTimeStart:"{start.strftime("%Y-%m-%dT%H:%M:%S")}",\nCreationTimeEnd:"{end.strftime("%Y-%m-%dT%H:%M:%S")}"\n'
+        else:
+            if self.start_date:
+                date_string += f'CreationTimeStart:"{self.start_date}",\n'
+            if self.end_date:
+                date_string += f'CreationTimeEnd:"{self.end_date}"\n'
+        return date_string
+
+    @property
+    def days(self):
+        return self._days
 
     @days.setter
     def days(self, value: int):
@@ -278,7 +337,7 @@ class FindingFilter:
         if self.providers:
             value = self.__filter_string_helper(self.providers, CloudProviders)
             filter_string += f"CloudProviders:[{value}],\n"
-        if self.days:
+        if self.days or self.start_date or self.end_date:
             filter_string += self.__date_range()
         if self.resource_ids:
             if self.resource_ids:
