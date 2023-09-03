@@ -27,13 +27,12 @@ from queries.findings_query import findings_query
 logging.basicConfig(level=logging.INFO)
 
 
-def get_aws_excessive_permissions_count(days: int = None, group_by_ou: bool = False, compare: bool = False, depth: int = 0):
+def get_aws_excessive_permissions_count(days: int = None, group_by_ou: bool = False, compare: bool = False, depth: int = 0, folder_names: str = None):
     if depth > 2:
         logging.info('Depth can not be larger than 2')
     logging.info('getting aws accounts')
     aws_accounts = get_aws_accounts(status="Valid")
     folders = Folders()
-    folders.get_folders()
     logging.info("getting permissions count")
 
     # build the findings filter for excessive permissions
@@ -83,7 +82,7 @@ def get_aws_excessive_permissions_count(days: int = None, group_by_ou: bool = Fa
     if not group_by_ou:
         for account in aws_accounts:
             obj = {
-                "Account": f'{get_ermetic_folder_path(folders=folders.folders, folder_id=account["ParentScopeId"])}/{account["Name"]}',
+                "Account": f'{get_ermetic_folder_path(folders=folders.folders_list, folder_id=account["ParentScopeId"])}/{account["Name"]}',
                 "InactiveUsers": 0,
                 "InactiveRoles": 0,
                 "InactivePermissionSet": 0,
@@ -99,11 +98,15 @@ def get_aws_excessive_permissions_count(days: int = None, group_by_ou: bool = Fa
             results.append(obj)
     # This flow aggregates the Excessive Permissions under their respective account OU/Folder in Ermetic
     else:
-        folder_hierarchy = Folders(accounts=aws_accounts)
-        folder_hierarchy.get_folders()
-        parent_folders = folder_hierarchy.org_tree
-
+        folders = Folders(accounts=aws_accounts)
+        folder_tree = folders.folders_tree
+        parent_folders = {}
+        for name in folder_names.split(','):
+            nodes = folder_tree.find_nodes_by_name(name=name)
+            if nodes:
+                parent_folders[name] = [node.to_dict() for node in nodes]
         # Reduce DRY
+
         def update_result(parent, child, aws_accounts, permissions, results):
             folder_name = parent["Name"] if child is None else f"{parent['Name']}/{child['Name']}"
             obj = {
@@ -119,22 +122,22 @@ def get_aws_excessive_permissions_count(days: int = None, group_by_ou: bool = Fa
             }
             for account in aws_accounts:
                 folder_path = get_ermetic_folder_path(
-                    folders=folders.folders, folder_id=account["ParentScopeId"])
+                    folders=folders.foldes_list, folder_id=account["ParentScopeId"])
                 if folder_name in folder_path:
                     for permission in permissions.get(account['Id'], []):
                         update_obj(
                             obj=obj, typename=permission['__typename'])
             results.append(obj)
         # Loop through the root, parent and child folders only two levels deep. The first loop will always run, the rest are controlled by the depth parameter
+        folder_input = ''
         for parent in parent_folders:
             update_result(parent, None, aws_accounts,
                           permissions_by_account, results)
-            if parent.get('Children') and depth == 1:
+            if parent.get('Children') and depth >= 1:
                 for child in parent.get('Children'):
                     update_result(parent, child, aws_accounts,
                                   permissions_by_account, results)
                     if child.get('Children') and depth == 2:
-                        print(f'Depth 2: {child}')
                         for subchild in child.get('Children'):
                             update_result(child, subchild, aws_accounts,
                                           permissions_by_account, results)

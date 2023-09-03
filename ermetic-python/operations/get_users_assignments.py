@@ -17,87 +17,90 @@ import json
 import csv
 
 from operations.get_aws_accounts import get_aws_accounts
-from operations.get_folders import get_folders
+from operations.Folders import Folders
 from operations.get_users import get_users
 from common.get_ermetic_folder_path import get_ermetic_folder_path
 
 
 def get_users_assignments(csv_file=False, json_file=False):
-  """
-  Get Tenant users and save to CSV or JSON
+    """
+    Get Tenant users and save to CSV or JSON
 
-  Keyword Arguments:
+    Keyword Arguments:
 
-  csv_file -- Save to file to csv (default false)
+    csv_file -- Save to file to csv (default false)
 
-  json_file -- Save to file to json (default false)
-  """
-  users = get_users()
-  aws_accounts = get_aws_accounts(False)
-  folders = get_folders()
+    json_file -- Save to file to json (default false)
+    """
+    users = get_users()
+    aws_accounts = get_aws_accounts(False)
+    folders = Folders()
+    folders.get_folders()
+    access_report: List[Dict] = []
+    for account in aws_accounts:
+        obj = {
+            "AccountName": account["Name"],
+            "AccountId": account["Id"],
+            "Users": []
+        }
+        for user in users:
+            user_role = {
+                "UserId": None,
+                "Role": None,
+                "AccessType": None,
+                "FolderPath": None
+            }
+            if account["Id"] == user["ScopeId"]:
+                user_role["UserId"] = user["UserId"]
+                user_role["Role"] = user["Role"]
+                user_role["AccessType"] = "Direct"
+                user_role["FolderPath"] = get_ermetic_folder_path(
+                    folders.foldes_list, account["ParentScopeId"])
+                obj["Users"].append(user_role)
+            if not user["ScopeId"]:
+                user_role["UserId"] = user["UserId"]
+                user_role["Role"] = user["Role"]
+                user_role["AccessType"] = "Organization"
+                user_role["FolderPath"] = get_ermetic_folder_path(
+                    folders.foldes_list, account["ParentScopeId"])
+                obj["Users"].append(user_role)
+            for folder in folders.foldes_list:
+                if folder["Id"] == user["ScopeId"]:
+                    user_role["UserId"] = user["UserId"]
+                    user_role["Role"] = user["Role"]
+                    user_role["AccessType"] = "Folder"
+                    user_role["FolderPath"] = get_ermetic_folder_path(
+                        folders.foldes_list, account["ParentScopeId"])
+                    obj["Users"].append(user_role)
+        access_report.append(obj)
 
-  access_report: List[Dict] = []
-  for account in aws_accounts:
-    obj = {
-      "AccountName": account["Name"],
-      "AccountId": account["Id"],
-      "Users": []
-    }
-    for user in users:
-      user_role = {
-        "UserId": None,
-        "Role": None,
-        "AccessType": None,
-        "FolderPath": None
-      }
-      if account["Id"] == user["ScopeId"]:
-        user_role["UserId"] = user["UserId"]
-        user_role["Role"] = user["Role"]
-        user_role["AccessType"] = "Direct"
-        user_role["FolderPath"] = get_ermetic_folder_path(folders, account["ParentScopeId"])
-        obj["Users"].append(user_role)
-      if not user["ScopeId"]:
-        user_role["UserId"] = user["UserId"]
-        user_role["Role"] = user["Role"]
-        user_role["AccessType"] = "Organization"
-        user_role["FolderPath"] = get_ermetic_folder_path(folders, account["ParentScopeId"])
-        obj["Users"].append(user_role)
-      for folder in folders:
-        if folder["Id"] == user["ScopeId"]:
-          user_role["UserId"] = user["UserId"]
-          user_role["Role"] = user["Role"]
-          user_role["AccessType"] = "Folder"
-          user_role["FolderPath"] = get_ermetic_folder_path(folders, account["ParentScopeId"])
-          obj["Users"].append(user_role)
-    access_report.append(obj)
-
-  if csv_file:
-    try:
-      with open('users.csv', 'w', newline='') as file:
-        writer = csv.writer(file)
+    if csv_file:
         try:
-          header = list(access_report[0].keys())
-          header.append(access_report[0]['Users'][0].keys())
-          writer.writerow(header)
-        except (IOError, OSError):
-          raise SystemExit(
-              f"Error writing to file {e.filename}: {e.args[1]}")
-        for entry in access_report:
-          account = entry['AccountName']
-          accountId = entry['AccountId']
-          users = entry['Users']
-          try:
-            for i in range(len(users)):
-              writer.writerow(
-                  [account, accountId, users[i]['UserId'], users[i]['Role'], users[i]['AccessType'], users[i]['FolderPath']])
-          except (IOError, OSError) as e:
+            with open('users.csv', 'w', newline='') as file:
+                writer = csv.writer(file)
+                try:
+                    header = list(access_report[0].keys())
+                    header.append(access_report[0]['Users'][0].keys())
+                    writer.writerow(header)
+                except (IOError, OSError):
+                    raise SystemExit(
+                        f"Error writing to file {e.filename}: {e.args[1]}")
+                for entry in access_report:
+                    account = entry['AccountName']
+                    accountId = entry['AccountId']
+                    users = entry['Users']
+                    try:
+                        for i in range(len(users)):
+                            writer.writerow(
+                                [account, accountId, users[i]['UserId'], users[i]['Role'], users[i]['AccessType'], users[i]['FolderPath']])
+                    except (IOError, OSError) as e:
+                        raise SystemExit(
+                            f"Error writing to file {e.filename}: {e.args[1]}")
+        except (FileNotFoundError, PermissionError, OSError) as e:
             raise SystemExit(
-                f"Error writing to file {e.filename}: {e.args[1]}")
-    except (FileNotFoundError, PermissionError, OSError) as e:
-      raise SystemExit(
-          f"The file '{e.filename}' is in use or we don't have access: {e.args[1]}")
-  if json_file:
-    with open(file='users.json', mode='w', newline='') as file:
-      file.write(json.dumps(access_report))
-      file.close()
-  return access_report
+                f"The file '{e.filename}' is in use or we don't have access: {e.args[1]}")
+    if json_file:
+        with open(file='users.json', mode='w', newline='') as file:
+            file.write(json.dumps(access_report))
+            file.close()
+    return access_report
