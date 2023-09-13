@@ -17,26 +17,27 @@
 from operations.get_aws_accounts import get_aws_accounts
 # from operations.get_okta_users import get_okta_users
 # from operations.get_aws_billable_resources import get_aws_billable_resources
-# from operations.get_excessive_permissions_count import get_aws_excessive_permissions_count
+from operations.get_excessive_permissions_count import get_aws_excessive_permissions_count
 from operations.Folders import Folders
-# from common.ReportHandler import ReportHandler
+from common.ReportHandler import ReportHandler
 # from Filters.FindingFilter import FindingFilter
 # from operations.Folder_Refactor import folder_org_build
-folders = Folders(accounts=get_aws_accounts())
-folder_tree = folders.folders_tree
+# folders = Folders(accounts=get_aws_accounts())
+# folder_tree = folders.folders_tree
 # parent_folders = {}
-# folder_names = 'Accounts,SivansOU'
+folder_names = 'DEV,PROD'
 # for name in folder_names.split(','):
 #     nodes = folder_tree.find_nodes_by_name(name=name)
 #     if nodes:
 #         parent_folders[name] = [node.to_dict() for node in nodes]
 # print(parent_folders)
-print(folder_tree.to_dict())
+# print(folder_tree.to_dict())
 # Reduce DRY
-# data = get_aws_excessive_permissions_count(group_by_ou=True, depth=2)
-# report_handler = ReportHandler(base_file_name="permissions_report", data=data)
-# report_handler.excel_report("ExcessivePermissions", True,)
-# report_handler.csv_report()
+data = get_aws_excessive_permissions_count(
+    group_by_ou=True, folder_names=folder_names)
+report_handler = ReportHandler(base_file_name="permissions_report", data=data)
+report_handler.excel_report("ExcessivePermissions", True,)
+report_handler.csv_report()
 # finding_filter = FindingFilter()
 # finding_filter.end_date = '02/05/2023'
 # finding_filter.start_date = '02/06/2023'

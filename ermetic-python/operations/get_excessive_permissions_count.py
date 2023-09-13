@@ -100,17 +100,17 @@ def get_aws_excessive_permissions_count(days: int = None, group_by_ou: bool = Fa
     else:
         folders = Folders(accounts=aws_accounts)
         folder_tree = folders.folders_tree
-        parent_folders = {}
+        parent_folders = []
         for name in folder_names.split(','):
             nodes = folder_tree.find_nodes_by_name(name=name)
             if nodes:
-                parent_folders[name] = [node.to_dict() for node in nodes]
+                parent_folders += [node.to_dict() for node in nodes]
         # Reduce DRY
 
         def update_result(parent, child, aws_accounts, permissions, results):
-            folder_name = parent["Name"] if child is None else f"{parent['Name']}/{child['Name']}"
+            folder_name = parent if child is None else f"{parent}/{child['name']}"
             obj = {
-                "Folder": folder_name,
+                "Folder": child['name'],
                 "InactiveUsers": 0,
                 "InactiveRoles": 0,
                 "InactivePermissionSet": 0,
@@ -122,24 +122,24 @@ def get_aws_excessive_permissions_count(days: int = None, group_by_ou: bool = Fa
             }
             for account in aws_accounts:
                 folder_path = get_ermetic_folder_path(
-                    folders=folders.foldes_list, folder_id=account["ParentScopeId"])
+                    folders=folders.folders_list, folder_id=account["ParentScopeId"])
                 if folder_name in folder_path:
                     for permission in permissions.get(account['Id'], []):
                         update_obj(
                             obj=obj, typename=permission['__typename'])
             results.append(obj)
         # Loop through the root, parent and child folders only two levels deep. The first loop will always run, the rest are controlled by the depth parameter
-        folder_input = ''
         for parent in parent_folders:
-            update_result(parent, None, aws_accounts,
-                          permissions_by_account, results)
-            if parent.get('Children') and depth >= 1:
-                for child in parent.get('Children'):
-                    update_result(parent, child, aws_accounts,
-                                  permissions_by_account, results)
-                    if child.get('Children') and depth == 2:
-                        for subchild in child.get('Children'):
-                            update_result(child, subchild, aws_accounts,
-                                          permissions_by_account, results)
+            for child in parent['children']:
+                update_result(parent, child, aws_accounts,
+                              permissions_by_account, results)
+            # if parent.get('Children') and depth >= 1:
+            #     for child in parent.get('Children'):
+            #         update_result(parent, child, aws_accounts,
+            #                       permissions_by_account, results)
+            #         if child.get('Children') and depth == 2:
+            #             for subchild in child.get('Children'):
+            #                 update_result(child, subchild, aws_accounts,
+            #                               permissions_by_account, results)
 
     return results
