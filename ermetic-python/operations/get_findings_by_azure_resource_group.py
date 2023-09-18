@@ -15,7 +15,8 @@ import json
 
 from common.ermetic_request import ermetic_request
 from Filters.FindingsFilter import FindingsFilter
-from common.save_to_disk import save_to_csv, save_to_json
+from Filters.FindingFilter import FindingFilter
+from common.ReportHandler import ReportHandler
 from operations.get_azure_resource_by_groupId import azure_resources_by_groupId
 from queries.findings_by_resource_group_query import findings_by_resource_group_query
 
@@ -42,18 +43,21 @@ def get_findings_by_azure_resource_group(resource_group_id: str, status: str = '
     """
     azure_resources = azure_resources_by_groupId(resource_group_id)
     resource_ids = [i['Id'] for i in azure_resources]
-    findings_filter = FindingsFilter(
-        ResourceIds=json.dumps(resource_ids), Statuses=status)
+    # findings_filter = FindingsFilter(
+    #     ResourceIds=json.dumps(resource_ids), Statuses=status)
+    findings_filter = FindingFilter(
+        resource_ids=resource_ids, statuses=status)
     findings = ermetic_request(
-        findings_by_resource_group_query, filters=findings_filter.filter)
+        findings_by_resource_group_query, filters=findings_filter.to_filter_string())
     for finding in findings:
         steps = finding['Remediation']['Console']['Steps'] = str(
             finding['Remediation']['Console']['Steps']).split('\n')
         finding['Remediation'] = '\n'.join(steps)
+    report_handler = ReportHandler(base_file_name=file_name, data=findings)
     if csv_file:
         file_name = f'findings-{resource_group_id.split("/")[-1]}'
-        save_to_csv(file_name=file_name, data=findings)
+        report_handler.csv_report()
     if json_file:
         file_name = f'findings-{resource_group_id.split("/")[-1]}'
-        save_to_json(file_name=file_name, data=findings)
+        report_handler.json_report()
     return findings

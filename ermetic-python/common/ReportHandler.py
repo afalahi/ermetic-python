@@ -14,8 +14,11 @@
 import csv
 import json
 import pandas as pd
+import logging
 from typing import List, Dict
 from datetime import datetime
+
+logging.basicConfig(level=logging.INFO)
 
 
 class ReportHandler:
@@ -24,6 +27,9 @@ class ReportHandler:
         self.data = data
 
     def csv_report(self):
+        if not self.data:
+            logging.warning("Received empty data, cannot generate report")
+            return
         file_name = self.base_file_name + '.csv'
         try:
             with open(file=file_name, mode='w', newline='') as csv_file:
@@ -40,6 +46,9 @@ class ReportHandler:
                 f"The file '{e.filename}' is in use or we don't have access: {e.args[1]}")
 
     def json_report(self):
+        if not self.data:
+            logging.warning("Received empty data, cannot generate report")
+            return
         file_name = self.base_file_name + '.json'
         try:
             with open(file=file_name, mode='w', newline='') as json_file:
@@ -55,6 +64,9 @@ class ReportHandler:
                 f"The file '{e.filename}' is in use or we don't have access: {e.args[1]}")
 
     def excel_report(self, sheet_name: str = 'ermetic_data_overview', charts: bool = False, split_charts: bool = False, chart_trends: bool = False):
+        if not self.data:
+            logging.warning("Received empty data, cannot generate report")
+            return
         # Create the workbook and sheet using Pandas DF
         df = pd.DataFrame(self.data)
         workbook_name = self.base_file_name + ".xlsx"
@@ -77,7 +89,7 @@ class ReportHandler:
             chart_width = 13
             charts_per_row = 2
             last_data_column = len(df.columns)
-            for col_num in range(1, len(df.columns) - 1):
+            for col_num in range(1, len(df.columns) - 2):
                 # Create a new chart object for each series
                 if split_charts:
                     chart = workbook.add_chart({'type': 'column'})
@@ -109,11 +121,17 @@ class ReportHandler:
                         chart.add_series({
                             'trendline': {'type': 'polynomial', 'order': 3},
                         })
-            if not split_charts:
-                # Configure the chart title and x and y axes
-                chart.set_title({'name': 'Excessive Permissions'})
-                chart.set_x_axis({'name': 'Accounts'})
-                chart.set_y_axis({'name': 'Categories'})
-                # Insert single sheet
-                worksheet.insert_chart(chart_position, chart)
+                    chart.set_title({'name': 'Excessive Permissions'})
+                    chart.set_x_axis({'name': 'Accounts'})
+                    chart.set_y_axis({'name': 'Permissions'})
+                    chart.set_style(10)
+                    # Insert single sheet
+                    worksheet.insert_chart(chart_position, chart)
+            # if not split_charts:
+            #     # Configure the chart title and x and y axes
+            #     chart.set_title({'name': 'Excessive Permissions'})
+            #     chart.set_x_axis({'name': 'Accounts'})
+            #     chart.set_y_axis({'name': 'Permissions'})
+            #     # Insert single sheet
+            #     worksheet.insert_chart(chart_position, chart)
         writer.close()

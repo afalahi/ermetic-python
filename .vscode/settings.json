@@ -1,4 +1,5 @@
 {
   "python.analysis.extraPaths": ["./queries", "./common"],
-  "python.analysis.typeCheckingMode": "off"
+  "python.analysis.typeCheckingMode": "off",
+  "cSpell.words": ["subchild"]
 }
