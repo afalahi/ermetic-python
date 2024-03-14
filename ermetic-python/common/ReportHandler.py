@@ -82,18 +82,15 @@ class ReportHandler:
                 str).apply(len).max(), len(str(value)))
             worksheet.set_column(col_num, col_num, max_length + 1)
         if charts:
-            # add the chart
-            chart = workbook.add_chart({'type': 'column'})
-            chart.set_size({'width': 800, 'height': 350})
-            chart_position = chr(65 + len(df.columns)) + '2'
-            chart_width = 13
-            charts_per_row = 2
-            last_data_column = len(df.columns)
             for col_num in range(1, len(df.columns) - 2):
                 # Create a new chart object for each series
                 if split_charts:
                     chart = workbook.add_chart({'type': 'column'})
                     chart.set_size({'width': 800, 'height': 350})
+                    chart_position = chr(65 + len(df.columns)) + '2'
+                    chart_width = 13
+                    charts_per_row = 2
+                    last_data_column = len(df.columns)
                     # Add a series to the chart
                     chart.add_series({
                         'values': f'={sheet_name}!${chr(65 + col_num)}$2:${chr(65 + col_num)}${len(df) + 1}',
@@ -112,6 +109,8 @@ class ReportHandler:
                     chart_position = f'{chart_col_letter}{chart_row + (col_num - 1) // charts_per_row * 20}'
                     worksheet.insert_chart(chart_position, chart)
                 else:
+                    chart = workbook.add_chart({'type': 'column'})
+                    chart.set_size({'width': 800, 'height': 350})
                     chart.add_series({
                         'values': f'={sheet_name}!${chr(65 + col_num)}$2:${chr(65 + col_num)}${len(df) + 1}',
                         'categories': f'={sheet_name}!$A$2:$A${len(df) + 1}',
@@ -121,17 +120,14 @@ class ReportHandler:
                         chart.add_series({
                             'trendline': {'type': 'polynomial', 'order': 3},
                         })
-                    chart.set_title({'name': 'Excessive Permissions'})
-                    chart.set_x_axis({'name': 'Accounts'})
-                    chart.set_y_axis({'name': 'Permissions'})
-                    chart.set_style(10)
-                    # Insert single sheet
-                    worksheet.insert_chart(chart_position, chart)
-            # if not split_charts:
-            #     # Configure the chart title and x and y axes
-            #     chart.set_title({'name': 'Excessive Permissions'})
-            #     chart.set_x_axis({'name': 'Accounts'})
-            #     chart.set_y_axis({'name': 'Permissions'})
-            #     # Insert single sheet
-            #     worksheet.insert_chart(chart_position, chart)
+            if not split_charts:
+                # Configure the chart title and x and y axes
+                chart.set_title(
+                    {'name': 'Excessive Permissions'})
+                chart.set_x_axis(
+                    {'name': 'Accounts', 'major_gridlines': {'visible': False}})
+                chart.set_y_axis(
+                    {'name': 'Permissions', 'major_gridlines': {'visible': False}})
+                # Insert single sheet
+                worksheet.insert_chart(chart_position, chart)
         writer.close()
