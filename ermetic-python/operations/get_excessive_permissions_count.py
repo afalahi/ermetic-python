@@ -69,7 +69,7 @@ def get_aws_excessive_permissions_count(days: int = None, group_by_ou: bool = Fa
         nonlocal count
         count += 1
         logging.info(
-            f"Currently calculating Excessive Permissions: {round(count / len(permissions_by_account) * 100)}% completion")
+            f"Currently calculating Excessive Permissions: {round(count / len(excessive_permissions) * 100)}% completion")
         # get the value mapping of the ermetic finding type
         key = mapping.get(typename)
         # if the key isn't none then increment the Excessive Permission
